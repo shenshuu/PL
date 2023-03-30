@@ -33,3 +33,19 @@ fun is_less (x : int, y : int) =
 fun min_max (xs : int list) =
     (valOf(min_or_max(xs, is_less)), valOf(min_or_max(xs, is_greater)))
 	
+fun cumsum (xs : int list) =
+    if null xs
+    then []
+    else
+	let
+	    fun helper (xs : int list, acc : int) =
+		if null xs	
+		then acc::[]
+		else acc::helper(tl xs, acc + hd xs)		
+	in
+	    helper(tl xs, hd xs)
+	end
+	    
+	
+fun greeting (s : string option) =
+    "Hello there, " ^ (if isSome s then valOf s else "you") ^ "!"
