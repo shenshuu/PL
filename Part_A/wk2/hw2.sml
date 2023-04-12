@@ -94,7 +94,7 @@ fun all_same_color cs =
 	[] => true
       | c::[] => true
       | head::neck::tail => card_color(head) = card_color(neck)
-			    andalso all_same_color tail
+			    andalso all_same_color(neck::tail)
 						   
 
 fun sum_cards cs =
