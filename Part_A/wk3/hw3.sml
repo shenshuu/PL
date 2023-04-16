@@ -84,3 +84,52 @@ fun all_answers f xs =
 			      NONE => NONE
 			    | SOME v => helper (xs', acc @ v)
     in helper (xs, []) end
+
+
+fun count_wildcards p =
+    g (fn () => 1) (fn _ => 0) p
+
+
+fun count_wild_and_variable_lengths p =
+    g (fn () => 1) String.size p
+	   
+
+fun count_some_var (s, p) =
+    g (fn () => 0) (fn x => if s=x then 1 else 0) p
+
+
+fun check_pat p =
+    let
+	fun var_names p =
+	    case p of
+		Variable s => [s] 
+	      | ConstructorP(_, p') => var_names p'
+	      | TupleP ps => foldl (fn (p', acc) => (var_names p') @ acc) [] ps
+	      | _ => []
+	fun has_duplicates xs =
+	    case xs of
+		[] => false
+	      | x::xs' => List.exists (fn y => x=y) xs' orelse has_duplicates xs'
+    in
+	(not o has_duplicates o var_names) p
+    end
+
+
+fun match (v, p) =
+    case (v, p) of
+	(v, Wildcard) => SOME []
+      | (Const num1, ConstP num2) => if num1 = num2 then SOME [] else NONE
+      | (v, Variable s) => SOME [(s, v)]
+      | (Tuple vs, TupleP ps) => if length vs = length ps
+				then all_answers match (ListPair.zip(vs, ps))
+				else NONE
+      | (Constructor(s, v'), ConstructorP(s', _)) => if s = s'
+						     then SOME [(s, v')]
+						     else NONE
+      | (Unit, UnitP) => SOME []
+      | (_, _) => NONE
+		      
+
+fun first_match v ps =
+    SOME (first_answer (fn p => match(v, p)) ps)
+    handle NoAnswer => NONE
