@@ -48,36 +48,5 @@
     (lambda () (f s))))
 
 
-(define (cycle-lists xs ys)
-  (define (helper xes yes)
-    (cond [(and (null? (cdr xes)) (null? (cdr yes))) (cons (cons (car xes) (car yes)) (lambda() (helper xs ys)))]
-          [(null? (cdr xes)) (cons (cons (car xes) (car yes)) (lambda() (helper xs (cdr yes))))]
-          [(null? (cdr yes)) (cons (cons (car xes) (car yes)) (lambda() (helper (cdr xes) ys)))]
-          [#t (cons (cons (car xes) (car yes)) (lambda () (helper (cdr xes) (cdr yes))))]))
-  (lambda () (helper xs ys)))
-
-
-(define (vector-assoc v vec)
-  (define len (vector-length vec))
-  (define (helper n)
-    (cond [(= n len) #f]
-          [(pair? (vector-ref vec n))
-           (if (equal? (car (vector-ref vec n)) v)
-               (vector-ref vec n)
-               (helper (+ n 1)))]
-          [#t (helper (+ n 1))]))
-  (helper 0))
-
-
-(define (cached-assoc xs n)
-  (define cache (make-vector n #f))
-  (define index 0)
-  (lambda (v)
-    (define cached-ans (vector-assoc v cache))
-    (if (pair? cached-ans)
-        cached-ans
-        ((lambda ()
-           (define computed-ans (assoc v xs))
-           (vector-set! cache index computed-ans)
-           (set! index (remainder (+ index 1) n))
-           computed-ans)))))
+;(define (cycle-lists xs ys)
+  
