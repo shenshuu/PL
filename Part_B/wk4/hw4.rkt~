@@ -49,12 +49,12 @@
 
 
 (define (cycle-lists xs ys)
-  (define (helper n)
-    (cons
-     (cons (list-nth-mod xs n)
-           (list-nth-mod ys n))
-     (lambda () (helper (+ n 1)))))
-  (lambda () (helper 0)))
+  (define (helper xes yes)
+    (cond [(and (null? (cdr xes)) (null? (cdr yes))) (cons (cons (car xes) (car yes)) (lambda() (helper xs ys)))]
+          [(null? (cdr xes)) (cons (cons (car xes) (car yes)) (lambda() (helper xs (cdr yes))))]
+          [(null? (cdr yes)) (cons (cons (car xes) (car yes)) (lambda() (helper (cdr xes) ys)))]
+          [#t (cons (cons (car xes) (car yes)) (lambda () (helper (cdr xes) (cdr yes))))]))
+  (lambda () (helper xs ys)))
 
 
 (define (vector-assoc v vec)
