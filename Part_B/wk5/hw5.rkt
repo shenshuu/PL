@@ -21,10 +21,17 @@
 (struct closure (env fun) #:transparent) 
 
 ;; Problem 1
-
+(define (racketlist->mupllist xs)
+  (if (null? xs)
+      (aunit)
+      (apair (car xs) (racketlist->mupllist (cdr xs)))))
+            
 ;; CHANGE (put your solutions here)
-
 ;; Problem 2
+(define (mupllist->racketlist xs)
+  (if (aunit? xs)
+      null
+      (cons (apair-e1 xs) (mupllist->racketlist (apair-e2 xs)))))
 
 ;; lookup a variable in an environment
 ;; Do NOT change this function
@@ -49,12 +56,58 @@
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
         ;; CHANGE add more cases here
+        [(fun? e) (closure env e)]
+        [(int? e) e]
+        [(aunit? e) e]
+        [(closure? e) e]
+        [(ifgreater? e)
+         (let ([e1 (eval-under-env (ifgreater-e1 e) env)]
+               [e2 (eval-under-env (ifgreater-e2 e) env)])
+           (if (and (int? e1)
+                    (int? e2))
+               (if (> (int-num e1)
+                      (int-num e2))
+                   (eval-under-env (ifgreater-e3 e) env)
+                   (eval-under-env (ifgreater-e4 e) env))
+               (error "subexpressions of ifgreater are not int")))]
+        [(mlet? e)
+         (let* ([key (mlet-var e)]
+               [val (eval-under-env (mlet-e e) env)]
+               [extended-env (cons (cons key val) env)])
+           (eval-under-env (mlet-body e) extended-env))]
+        [(call? e)
+         (let ([e1 (eval-under-env (call-funexp e) env)]
+               [e2 (eval-under-env (call-actual e) env)])
+           (if (closure? e1)
+               (let* ([fn (closure-fun e1)]
+                     [nameopt (fun-nameopt fn)]
+                     [args (cons (fun-formal fn) e2)]
+                     [body (fun-body fn)]
+                     [extended-env (append env (if nameopt
+                                               (list (cons nameopt fn) args)
+                                               (list args)))])
+                 (eval-under-env body extended-env))
+               (error "first expression must be a closure")))]
+        [(apair? e)
+         (let ([e1 (eval-under-env (apair-e1 e) env)]
+               [e2 (eval-under-env (apair-e2 e) env)])
+           (apair e1 e2))]
+        [(fst? e)
+         (if (apair? (fst-e e))
+             (apair-e1 (fst-e e))
+             (error "expression must be apair"))]
+        [(snd? e)
+         (if (apair? (snd-e e))
+             (apair-e2 (snd-e e))
+             (error "expression must be apair"))]
+        [(isaunit? e)
+         (if (aunit? e) (int 1) (int 0))]
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
 (define (eval-exp e)
   (eval-under-env e null))
-        
+
 ;; Problem 3
 
 (define (ifaunit e1 e2 e3) "CHANGE")
