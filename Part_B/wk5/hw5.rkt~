@@ -84,7 +84,7 @@
                      [args (cons (fun-formal fn) e2)]
                      [body (fun-body fn)]
                      [extended-env (append env (if nameopt
-                                               (list (cons nameopt e1) args)
+                                               (list (cons nameopt fn) args)
                                                (list args)))])
                  (eval-under-env body extended-env))
                (error "first expression must be a closure")))]
@@ -110,40 +110,15 @@
 
 ;; Problem 3
 
-(define (ifaunit e1 e2 e3)
-  (if (aunit? (eval-under-env e1 null))
-      (eval-under-env e2 null)
-      (eval-under-env e3 null)))
+(define (ifaunit e1 e2 e3) "CHANGE")
 
-(define (mlet* lstlst e2)
-  (define (extend-env xs env)
-    (if (null? xs)
-        env
-        (extend-env (cdr xs)
-         (cons
-          (cons (car (car xs))
-                (eval-under-env (cdr (car xs)) env)) env))))
-  (eval-under-env e2 (extend-env lstlst null)))
+(define (mlet* lstlst e2) "CHANGE")
 
-(define (ifeq e1 e2 e3 e4)
-  (let ([v1 (eval-under-env e1 null)]
-        [v2 (eval-under-env e2 null)])
-    (if (and (int? v1)
-             (int? v2))
-        (eval-under-env (if (= (int-num v1) (int-num v2)) e3 e4) null)
-        (error "subexpressions must be ints"))))
+(define (ifeq e1 e2 e3 e4) "CHANGE")
 
 ;; Problem 4
 
-(define mupl-map
-  (fun "#f" "g"
-       (fun "map" "xs"
-            (ifeq (int 1) (isaunit? (var "xs"))
-                  (aunit)
-                  (apair (call "g" (fst (var "xs")))
-                         (call "map" (snd (var "xs"))))))))
-
-(call mupl-map (fun #f "x" (add (var "x") (int 7))))
+(define mupl-map "CHANGE")
 
 (define mupl-mapAddN 
   (mlet "map" mupl-map
