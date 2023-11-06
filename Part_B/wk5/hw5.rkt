@@ -25,13 +25,15 @@
   (if (null? xs)
       (aunit)
       (apair (car xs) (racketlist->mupllist (cdr xs)))))
-            
-;; CHANGE (put your solutions here)
-;; Problem 2
-(define (mupllist->racketlist xs)
-  (if (aunit? xs)
+
+(define (mupllist->racketlist ms)
+  (if (aunit? ms)
       null
-      (cons (apair-e1 xs) (mupllist->racketlist (apair-e2 xs)))))
+      (cons (apair-e1 ms) (mupllist->racketlist (apair-e2 ms)))))
+
+;; CHANGE (put your solutions here)
+
+;; Problem 2
 
 ;; lookup a variable in an environment
 ;; Do NOT change this function
@@ -56,98 +58,86 @@
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
         ;; CHANGE add more cases here
-        [(fun? e) (closure env e)]
         [(int? e) e]
-        [(aunit? e) e]
         [(closure? e) e]
+        [(aunit? e) e]
+        [(apair? e)
+         (let ([v1 (eval-under-env (apair-e1 e) env)]
+               [v2 (eval-under-env (apair-e2 e) env)])
+           (apair v1 v2))]
+        [(fun? e) (closure env e)]
         [(ifgreater? e)
-         (let ([e1 (eval-under-env (ifgreater-e1 e) env)]
-               [e2 (eval-under-env (ifgreater-e2 e) env)])
-           (if (and (int? e1)
-                    (int? e2))
-               (if (> (int-num e1)
-                      (int-num e2))
+         (let ([v1 (eval-under-env (ifgreater-e1 e) env)]
+               [v2 (eval-under-env (ifgreater-e2 e) env)])
+           (if (and (int? v1) (int? v2))
+               (if (> (int-num v1) (int-num v2))
                    (eval-under-env (ifgreater-e3 e) env)
                    (eval-under-env (ifgreater-e4 e) env))
-               (error "subexpressions of ifgreater are not int")))]
+               (error "MUPL expressions must be type int")))]
         [(mlet? e)
-         (let* ([key (mlet-var e)]
-               [val (eval-under-env (mlet-e e) env)]
-               [extended-env (cons (cons key val) env)])
-           (eval-under-env (mlet-body e) extended-env))]
+         (let* ([v (eval-under-env (mlet-e e) env)]
+                [new-env (cons (cons (mlet-var e) v) env)])
+           (eval-under-env (mlet-body e) new-env))]
         [(call? e)
-         (let ([e1 (eval-under-env (call-funexp e) env)]
-               [e2 (eval-under-env (call-actual e) env)])
-           (if (closure? e1)
-               (let* ([fn (closure-fun e1)]
-                     [nameopt (fun-nameopt fn)]
-                     [args (cons (fun-formal fn) e2)]
-                     [body (fun-body fn)]
-                     [extended-env (append env (if nameopt
-                                               (list (cons nameopt e1) args)
-                                               (list args)))])
-                 (eval-under-env body extended-env))
-               (error "first expression must be a closure")))]
-        [(apair? e)
-         (let ([e1 (eval-under-env (apair-e1 e) env)]
-               [e2 (eval-under-env (apair-e2 e) env)])
-           (apair e1 e2))]
+         (let* ([arg (eval-under-env (call-actual e) env)]
+                [cl (eval-under-env (call-funexp e) env)]
+                [fn-name (fun-nameopt (closure-fun cl))]
+                [fn-body (fun-body (closure-fun cl))]
+                [param (cons (fun-formal (closure-fun cl)) arg)]
+                [new-env (cons param (closure-env cl))])
+           (if fn-name
+               (eval-under-env fn-body (cons (cons fn-name cl) new-env))
+               (eval-under-env fn-body new-env)))]
         [(fst? e)
-         (if (apair? (fst-e e))
-             (apair-e1 (fst-e e))
-             (error "expression must be apair"))]
+         (let ([v (eval-under-env (fst-e e) env)])
+         (if (apair? v)
+             (apair-e1 v)
+             (error "MUPL expression must be apair")))]
         [(snd? e)
-         (if (apair? (snd-e e))
-             (apair-e2 (snd-e e))
-             (error "expression must be apair"))]
+         (let ([v (eval-under-env (snd-e e) env)])
+         (if (apair? v)
+             (apair-e2 v)
+             (error "MUPL expression must be apair")))]
         [(isaunit? e)
-         (if (aunit? e) (int 1) (int 0))]
+         (if (aunit? (eval-under-env (isaunit-e e) env)) (int 1) (int 0))]
         [#t (error (format "bad MUPL expression: ~v" e))]))
+
+
+; fix isaunit env lookup
+;(eval-under-env (isaunit (ifgreater (int 5) (var "x") (int 5) (aunit))) (list (cons (var "x") (int 0))))
 
 ;; Do NOT change
 (define (eval-exp e)
   (eval-under-env e null))
-
+        
 ;; Problem 3
 
 (define (ifaunit e1 e2 e3)
-  (if (aunit? (eval-under-env e1 null))
-      (eval-under-env e2 null)
-      (eval-under-env e3 null)))
+  (ifgreater (isaunit e1) (int 0) e2 e3))
 
 (define (mlet* lstlst e2)
-  (define (extend-env xs env)
-    (if (null? xs)
-        env
-        (extend-env (cdr xs)
-         (cons
-          (cons (car (car xs))
-                (eval-under-env (cdr (car xs)) env)) env))))
-  (eval-under-env e2 (extend-env lstlst null)))
+  (if (null? lstlst)
+      e2
+      (mlet (caar lstlst) (cdar lstlst) (mlet* (cdr lstlst) e2))))
 
 (define (ifeq e1 e2 e3 e4)
-  (let ([v1 (eval-under-env e1 null)]
-        [v2 (eval-under-env e2 null)])
-    (if (and (int? v1)
-             (int? v2))
-        (eval-under-env (if (= (int-num v1) (int-num v2)) e3 e4) null)
-        (error "subexpressions must be ints"))))
+  (ifgreater e1 e2 e4 (ifgreater e2 e1 e4 e3)))
+  
 
 ;; Problem 4
 
 (define mupl-map
-  (fun "#f" "g"
-       (fun "map" "xs"
-            (ifeq (int 1) (isaunit? (var "xs"))
-                  (aunit)
-                  (apair (call "g" (fst (var "xs")))
-                         (call "map" (snd (var "xs"))))))))
-
-(call mupl-map (fun #f "x" (add (var "x") (int 7))))
+  (fun "map" "f"
+       (fun "apply" "ms"
+            (ifaunit (var "ms")
+                (aunit)
+                (apair (call (var "f") (fst (var "ms"))) (call (var "apply") (snd (var "ms"))))))))
+       
 
 (define mupl-mapAddN 
   (mlet "map" mupl-map
-        "CHANGE (notice map is now in MUPL scope)"))
+        (fun "f" "x"
+             (call (var "map") (fun "g" "y" (add (var "x") (var "y")))))))
 
 ;; Challenge Problem
 
