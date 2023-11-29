@@ -26,7 +26,7 @@ class MyPiece < Piece
     end
 
     def self.cheat_piece (board)
-      MyPiece.new([[0,0]], board)
+      MyPiece.new([[[0,0]]], board)
     end
 
     def area
@@ -44,18 +44,18 @@ class MyPiece < Piece
       @current_block = MyPiece.next_piece(self)
       @block_area = @current_block.area
       @cheat_pieces = 0
-      @score = 1000
+      @score = 0
     end
 
     def next_piece
-      @current_block = MyPiece.next_piece(self)
-      @block_area = @current_block.area
-      @current_pos = nil
-    end
-
-    def cheat_piece
-      @current_block = MyPiece.cheat_piece(self)
-      @block_area = 1
+      if @cheat_pieces > 0
+        @current_block = MyPiece.cheat_piece(self)
+        @cheat_pieces -= 1
+        @block_area = 1
+      else
+        @current_block = MyPiece.next_piece(self)
+        @block_area = @current_block.area
+      end
       @current_pos = nil
     end
 
@@ -69,46 +69,6 @@ class MyPiece < Piece
       }
       remove_filled
       @delay = [@delay - 2, 80].max
-    end
-
-    def drop_all_the_way
-      if @game.is_running?
-        ran = @current_block.drop_by_one
-        @current_pos.each{|block| block.remove}
-        while ran
-          @score += 1
-          ran = @current_block.drop_by_one
-        end
-        draw
-        store_current
-        if !game_over?
-          if cheat_pieces > 0
-            @cheat_pieces -= 1
-            cheat_piece
-          else
-            next_piece
-          end
-        end
-        @game.update_score
-        draw
-      end
-    end
-
-    def run
-      ran = @current_block.drop_by_one
-      if !ran
-        store_current
-        if !game_over?
-          if cheat_pieces > 0
-            @cheat_pieces -= 1
-            cheat_piece
-          else
-            next_piece
-          end
-        end
-      end
-      @game.update_score
-      draw
     end
   
   end
