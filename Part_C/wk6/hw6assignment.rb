@@ -6,16 +6,16 @@
 class MyPiece < Piece
     # The constant All_My_Pieces should be declared here
     All_My_Pieces = [
-      # [[[0, 0], [1, 0], [0, 1], [1, 1]]],  # square (only needs one)
-      # rotations([[0, 0], [-1, 0], [1, 0], [0, -1]]), # T
-      # [[[0, 0], [-1, 0], [1, 0], [2, 0]], # long (only needs two)
-      # [[0, 0], [0, -1], [0, 1], [0, 2]]],
-      # rotations([[0, 0], [0, -1], [0, 1], [1, 1]]), # L
-      # rotations([[0, 0], [0, -1], [0, 1], [-1, 1]]), # inverted L
-      # rotations([[0, 0], [-1, 0], [0, -1], [1, -1]]), # S
-      # rotations([[0, 0], [1, 0], [0, -1], [-1, -1]]), # Z
-      rotations([[0,0],[0,1],[1,1]]), # corner
-      rotations([[0,0],[1,0],[0,1],[1,1],[2,1]]), # 2x3
+      [[[0, 0], [1, 0], [0, 1], [1, 1]]],  # square (only needs one)
+      rotations([[0, 0], [-1, 0], [1, 0], [0, -1]]), # T
+      [[[0, 0], [-1, 0], [1, 0], [2, 0]], # long (only needs two)
+      [[0, 0], [0, -1], [0, 1], [0, 2]]],
+      rotations([[0, 0], [0, -1], [0, 1], [1, 1]]), # L
+      rotations([[0, 0], [0, -1], [0, 1], [-1, 1]]), # inverted L
+      rotations([[0, 0], [-1, 0], [0, -1], [1, -1]]), # S
+      rotations([[0, 0], [1, 0], [0, -1], [-1, -1]]), # Z
+      rotations([[0, 0], [0, 1], [1, 1]]), # corner
+      rotations([[0, 0], [1, 0], [0, 1], [1, 1], [2, 1]]), # 2x3
       [[[-2, 0], [-1, 0], [0, 0], [1, 0], [2,0]], # 1x5
       [[0, -2], [0, -1], [0, 0], [0, 1], [0, 2]]],
     ]
@@ -23,6 +23,10 @@ class MyPiece < Piece
     # your enhancements here
     def self.next_piece (board)
       MyPiece.new(All_My_Pieces.sample, board)
+    end
+
+    def self.cheat_piece (board)
+      MyPiece.new([[[0,0]]], board)
     end
 
     def area
@@ -33,16 +37,25 @@ class MyPiece < Piece
   
   class MyBoard < Board
     # your enhancements here
+    attr_accessor :score, :cheat_pieces
 
     def initialize (game)
       super
       @current_block = MyPiece.next_piece(self)
       @block_area = @current_block.area
+      @cheat_pieces = 0
+      @score = 0
     end
 
     def next_piece
-      @current_block = MyPiece.next_piece(self)
-      @block_area = @current_block.area
+      if @cheat_pieces > 0
+        @current_block = MyPiece.cheat_piece(self)
+        @cheat_pieces -= 1
+        @block_area = 1
+      else
+        @current_block = MyPiece.next_piece(self)
+        @block_area = @current_block.area
+      end
       @current_pos = nil
     end
 
@@ -67,6 +80,12 @@ class MyPiece < Piece
       @root.bind('u', proc {
         @board.rotate_clockwise
         @board.rotate_clockwise
+      })
+      @root.bind('c', proc {
+        if @board.score >= 100
+          @board.cheat_pieces += 1
+          @board.score -= 100
+        end
       })
     end
 
