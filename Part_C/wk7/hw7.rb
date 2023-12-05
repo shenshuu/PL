@@ -122,6 +122,14 @@ class GeometryExpression
     def preprocess_prog
         self
     end
+
+    def eval_prog env
+        self
+    end
+
+    def shift(dx,dy)
+        Point.new(@x+dx, @y+dy)
+    end
   end
   
   class Line < GeometryValue
@@ -136,6 +144,14 @@ class GeometryExpression
     def preprocess_prog
         self
     end
+
+    def eval_prog env
+        self
+    end
+
+    def shift(dx,dy)
+        Line.new(@m, @b+dy-@m*dx)
+    end
   end
   
   class VerticalLine < GeometryValue
@@ -148,6 +164,14 @@ class GeometryExpression
 
     def preprocess_prog
         self
+    end
+
+    def eval_prog env
+        self
+    end
+
+    def shift(dx,dy)
+        VerticalLine.new(@x+dx)
     end
   end
   
@@ -166,13 +190,21 @@ class GeometryExpression
     end
 
     def preprocess_prog
-        if real_close(x1,x2) && real_close(y1,y2)
-            Point.new(x1,y1)
-        elsif x2 < x1 || x1 == x2 && y2 < y1
-            LineSegment.new(x2,y2,x1,y1)
+        if real_close(@x1,@x2) && real_close(@y1,@y2)
+            Point.new(@x1,@y1)
+        elsif @x2 < @x1 || @x1 == @x2 && @y2 < @y1
+            LineSegment.new(@x2,@y2,@x1,@y1)
         else
             self
         end
+    end
+
+    def eval_prog env
+        self
+    end
+
+    def shift(dx,dy)
+        LineSegment.new(@x1+dx,@y1+dy,@x2+dx,@y2+dy)
     end
   end
   
@@ -187,7 +219,11 @@ class GeometryExpression
     end
     
     def preprocess_prog
-        Intersect.new(e1.preprocess_prog, e2.preprocess_prog)
+        Intersect.new(@e1.preprocess_prog, @e2.preprocess_prog)
+    end
+
+    def eval_prog env
+        self
     end
   end
   
@@ -200,9 +236,16 @@ class GeometryExpression
       @e1 = e1
       @e2 = e2
     end
+
     def preprocess_prog
-        Let.new(s, e1.preprocess_prog, e2.preprocess_prog)
+        Let.new(@s, @e1.preprocess_prog, @e2.preprocess_prog)
     end
+
+    def eval_prog env
+        v = @e1.preprocess_prog.eval_prog env
+        @e2.preprocess_prog.eval_prog(env + [[@s,v]])
+    end
+
   end
   
   class Var < GeometryExpression
@@ -229,7 +272,12 @@ class GeometryExpression
       @dy = dy
       @e = e
     end
+
     def preprocess_prog
-        Shift.new(dx, dy, e.preprocess_prog)
+        Shift.new(@dx, @dy, @e.preprocess_prog)
+    end
+
+    def eval_prog env
+        @e.preprocess_prog.shift(@dx,@dy).eval_prog env
     end
   end
