@@ -19,6 +19,7 @@ datatype geom_exp =
 	 | Intersect of geom_exp * geom_exp (* intersection expression *)
 	 | Let of string * geom_exp * geom_exp (* let s = e1 in e2 *)
 	 | Var of string
+	 | Shift of real * real * geom_exp
 (* CHANGE add shifts for expressions of the form Shift(deltaX, deltaY, exp *)
 
 exception BadProgram of string
@@ -195,6 +196,25 @@ fun eval_prog (e,env) =
 	   | SOME (_,v) => v)
       | Let(s,e1,e2) => eval_prog (e2, ((s, eval_prog(e1,env)) :: env))
       | Intersect(e1,e2) => intersect(eval_prog(e1,env), eval_prog(e2, env))
+      | Shift(_, _,NoPoints) => NoPoints
+      | Shift(dx, _,VerticalLine(x)) => VerticalLine(x+dx)
+      | Shift(dx,dy,Point(x,y)) => Point(x+dx,y+dy)
+      | Shift(dx,dy,LineSegment(x1,y1,x2,y2)) => LineSegment(x1,y1,x2+dx,y2+dy)
+      | Shift(dx,dy,Line(m,y)) => Line(m,y+dy-m*dx)
+      | Shift(dx,dy,Var s) => eval_prog(Shift(dx,dy,eval_prog(Var s,env)),env)
+      | Shift(dx,dy,Let(s,e1,e2)) => eval_prog(Shift(dx,dy,eval_prog(Let(s,e1,e2),env)),env)
+      | Shift(dx,dy,Shift(dx',dy',exp)) => eval_prog(Shift(dx+dx',dy+dy',exp),env)
+      | _ => raise BadProgram "Bad program" 
+				      
 (* CHANGE: Add a case for Shift expressions *)
 
 (* CHANGE: Add function preprocess_prog of type geom_exp -> geom_exp *)
+fun preprocess_prog e =
+    case e of
+	LineSegment(x1,y1,x2,y2) => if real_close(x1,x2) andalso real_close(y1,y2)
+				    then Point(x1,y1)
+				    else if x2 < x1 orelse (real_close(x1,x2) andalso y2 < y1)
+				    then LineSegment(x2,y2,x1,y1)
+				    else e
+      | _ => e
+		 
