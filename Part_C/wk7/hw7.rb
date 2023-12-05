@@ -118,6 +118,10 @@ class GeometryExpression
       @x = x
       @y = y
     end
+
+    def preprocess_prog
+        self
+    end
   end
   
   class Line < GeometryValue
@@ -128,6 +132,10 @@ class GeometryExpression
       @m = m
       @b = b
     end
+    
+    def preprocess_prog
+        self
+    end
   end
   
   class VerticalLine < GeometryValue
@@ -136,6 +144,10 @@ class GeometryExpression
     attr_reader :x
     def initialize x
       @x = x
+    end
+
+    def preprocess_prog
+        self
     end
   end
   
@@ -152,6 +164,16 @@ class GeometryExpression
       @x2 = x2
       @y2 = y2
     end
+
+    def preprocess_prog
+        if real_close(x1,x2) && real_close(y1,y2)
+            Point.new(x1,y1)
+        elsif x2 < x1 || x1 == x2 && y2 < y1
+            LineSegment.new(x2,y2,x1,y1)
+        else
+            self
+        end
+    end
   end
   
   # Note: there is no need for getter methods for the non-value classes
@@ -163,6 +185,10 @@ class GeometryExpression
       @e1 = e1
       @e2 = e2
     end
+    
+    def preprocess_prog
+        Intersect.new(e1.preprocess_prog, e2.preprocess_prog)
+    end
   end
   
   class Let < GeometryExpression
@@ -173,6 +199,9 @@ class GeometryExpression
       @s = s
       @e1 = e1
       @e2 = e2
+    end
+    def preprocess_prog
+        Let.new(s, e1.preprocess_prog, e2.preprocess_prog)
     end
   end
   
@@ -187,6 +216,9 @@ class GeometryExpression
       raise "undefined variable" if pr.nil?
       pr[1]
     end
+    def preprocess_prog
+        self
+    end
   end
   
   class Shift < GeometryExpression
@@ -196,5 +228,8 @@ class GeometryExpression
       @dx = dx
       @dy = dy
       @e = e
+    end
+    def preprocess_prog
+        Shift.new(dx, dy, e.preprocess_prog)
     end
   end
