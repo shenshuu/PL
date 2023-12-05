@@ -153,12 +153,12 @@ if not (l1.x1 == -ONE and l1.y1 == -TWO and l1.x2 == THREE and l1.y2 == FOUR)
 end
 
 # #Let Variable Shadowing Test
-# l2 = Let.new("a", LineSegment.new(-ONE, -TWO, THREE, FOUR),
-#               Let.new("b", LineSegment.new(THREE,FOUR,-ONE,-TWO), Intersect.new(Var.new("a"),Var.new("b"))))
-# l2 = l2.preprocess_prog.eval_prog([["a",Point.new(0,0)]])
-# if not (l2.x1 == -ONE and l2.y1 == -TWO and l2.x2 == THREE and l2.y2 == FOUR)
-# 	puts "Let eval_prog should evaluate e2 after adding [s, e1] to the environment"
-# end
+l2 = Let.new("a", LineSegment.new(-ONE, -TWO, THREE, FOUR),
+              Let.new("b", LineSegment.new(THREE,FOUR,-ONE,-TWO), Intersect.new(Var.new("a"),Var.new("b"))))
+l2 = l2.preprocess_prog.eval_prog([["a",Point.new(0,0)]])
+if not (l2.x1 == -ONE and l2.y1 == -TWO and l2.x2 == THREE and l2.y2 == FOUR)
+	puts "Let eval_prog should evaluate e2 after adding [s, e1] to the environment"
+end
 
 
 # #Shift Tests

@@ -292,6 +292,18 @@ class GeometryExpression
         v.intersectLineSegment self
     end
 
+    def intersectPoint other
+        other.intersectLineSegment self
+    end
+
+    def intersectLine other
+        other.intersectLineSegment self
+    end
+
+    def intersectVerticalLine other
+        other.intersectLineSegment self
+    end
+
     def intersectWithSegmentAsLineResult seg
         aXstart,aYstart,aXend,aYend = @x1,@y1,@x2,@y2
         bXstart,bYstart,bXend,bYend = seg.x1,seg.y1,seg.x2,seg.y2
@@ -364,7 +376,7 @@ class GeometryExpression
 
     def eval_prog env
         v = @e1.preprocess_prog.eval_prog env
-        @e2.preprocess_prog.eval_prog(env + [[@s,v]])
+        @e2.preprocess_prog.eval_prog([[@s,v]] + env)
     end
 
   end
