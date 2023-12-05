@@ -130,6 +130,27 @@ class GeometryExpression
     def shift(dx,dy)
         Point.new(@x+dx, @y+dy)
     end
+
+    def intersect v
+        v.intersectPoint self
+    end
+
+    def intersectPoint other
+        if real_close(@x,other.x) && real_close(@y,other.y) then self else NoPoints.new end
+    end
+
+    def intersectVerticalLine other
+        if real_close(@x,other.x) then self else NoPoints.new end
+    end
+
+    def intersectLine other 
+        if real_close(@y, other.m*@x + other.b) then self else NoPoints.new end
+    end
+
+    def intersectLineSegment other
+        #FINISH INTERSECT LINESEGMENT FUNCTION
+    end
+
   end
   
   class Line < GeometryValue
@@ -192,7 +213,7 @@ class GeometryExpression
     def preprocess_prog
         if real_close(@x1,@x2) && real_close(@y1,@y2)
             Point.new(@x1,@y1)
-        elsif @x2 < @x1 || @x1 == @x2 && @y2 < @y1
+        elsif @x2 < @x1 || real_close(@x1,@x2) && @y2 < @y1
             LineSegment.new(@x2,@y2,@x1,@y1)
         else
             self
@@ -223,7 +244,9 @@ class GeometryExpression
     end
 
     def eval_prog env
-        self
+        v1 = @e1.preprocess_prog.eval_prog env
+        v2 = @e2.preprocess_prog.eval_prog env
+        v1.intersect v2
     end
   end
   
