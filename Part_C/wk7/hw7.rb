@@ -147,8 +147,17 @@ class GeometryExpression
         if real_close(@y, other.m*@x + other.b) then self else NoPoints.new end
     end
 
-    def intersectLineSegment other
-        #FINISH INTERSECT LINESEGMENT FUNCTION
+    def intersectWithSegmentAsLineResult seg
+        def inbetween(v,end1,end2,eps)
+            val1 = end1 - eps <= v && v <= end2 + eps
+            val2 = end2 - eps <= v && v <= end1 + eps
+            val1 && val2
+        end
+        if inbetween(@x,seg.x1,seg.x2,GeometryExpression::Epsilon) && inbetween(@y,seg.y1,seg.y2,GeometryExpression::Epsilon)
+            self
+        else
+            NoPoints.new
+        end
     end
 
   end
@@ -195,10 +204,14 @@ class GeometryExpression
             self
         # otherwise, they intersect at some point
         else
-            x = (@b - other.b) / (@m - other.m)
+            x = (@b - other.b) / (@m - other.m + 0.0)
             y = @b + x * @m
             Point.new(x,y)
         end
+    end
+
+    def intersectWithSegmentAsLineResult seg
+        seg 
     end
   end
   
@@ -237,6 +250,10 @@ class GeometryExpression
     def intersectVerticalLine other 
         if real_close(@x,other.x) then self else NoPoints.new end
     end
+
+    def intersectWithSegmentAsLineResult seg
+        seg 
+    end
   end
   
   class LineSegment < GeometryValue
@@ -269,6 +286,44 @@ class GeometryExpression
 
     def shift(dx,dy)
         LineSegment.new(@x1+dx,@y1+dy,@x2+dx,@y2+dy)
+    end
+
+    def intersect v
+        v.intersectLineSegment self
+    end
+
+    def intersectWithSegmentAsLineResult seg
+        aXstart,aYstart,aXend,aYend = @x1,@y1,@x2,@y2
+        bXstart,bYstart,bXend,bYend = seg.x1,seg.y1,seg.x2,seg.y2
+        if real_close(@x1,@x2)
+            if bYstart < aYstart
+                aXstart,aYstart,aXend,aYend = seg.x1,seg.y1,seg.x2,seg.y2
+                bXstart,bYstart,bXend,bYend = @x1,@y1,@x2,@y2
+            end
+            if real_close(aYend,bYstart)
+                Point.new(aXend,aYend)
+            elsif aYend < bYstart
+                NoPoints.new
+            elsif bYend < aYend
+                LineSegment.new(bXstart,bYstart,bXend,bYend)
+            else
+                LineSegment.new(bXstart,bYstart,aXend,aYend)
+            end
+        else
+            if bXstart < aXstart
+                aXstart,aYstart,aXend,aYend = seg.x1,seg.y1,seg.x2,seg.y2
+                bXstart,bYstart,bXend,bYend = @x1,@y1,@x2,@y2
+            end
+            if real_close(aXend,bXstart)
+                Point.new(aXend,aYend)
+            elsif aXend < bXstart
+                NoPoints.new
+            elsif bXend < aXend
+                LineSegment.new(bXstart,bYstart,bXend,bYend)
+            else
+                LineSegment.new(bXstart,bYstart,aXend,aYend)
+            end
+        end
     end
   end
   
