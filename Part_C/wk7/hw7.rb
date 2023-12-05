@@ -173,6 +173,33 @@ class GeometryExpression
     def shift(dx,dy)
         Line.new(@m, @b+dy-@m*dx)
     end
+
+    def intersect v
+        v.intersectLine self
+    end
+
+    def intersectPoint other
+        other.intersectLine self
+    end
+
+    def intersectVerticalLine other
+        self
+    end
+
+    def intersectLine other
+        # if lines are parallel
+        if real_close(@m,other.m) && !real_close(@b,other.b)
+            NoPoints.new
+        # if lines overlap each other
+        elsif real_close(@m,other.m) && real_close(@b,other.b)
+            self
+        # otherwise, they intersect at some point
+        else
+            x = (@b - other.b) / (@m - other.m)
+            y = @b + x * @m
+            Point.new(x,y)
+        end
+    end
   end
   
   class VerticalLine < GeometryValue
@@ -193,6 +220,22 @@ class GeometryExpression
 
     def shift(dx,dy)
         VerticalLine.new(@x+dx)
+    end
+
+    def intersect v
+        v.intersectVerticalLine self
+    end
+
+    def intersectPoint other
+        other.intersectVerticalLine self
+    end
+
+    def intersectLine other
+        other.intersectVerticalLine self
+    end
+
+    def intersectVerticalLine other 
+        if real_close(@x,other.x) then self else NoPoints.new end
     end
   end
   

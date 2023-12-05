@@ -61,14 +61,14 @@ if not (b1.m == THREE and b1.b == ONE)
 	puts "Line shift not working properly"
 end
 
-# b2 = b.intersect(Line.new(THREE,FIVE))
-# if not (((b2.is_a? Line)) and b2.m == THREE and b2.b == FIVE)
-# 	puts "Line intersect not working properly"
-# end
-# b3 = b.intersect(Line.new(THREE,FOUR))
-# if not ((b3.is_a? NoPoints))
-# 	puts "Line intersect not working properly"
-# end
+b2 = b.intersect(Line.new(THREE,FIVE))
+if not (((b2.is_a? Line)) and b2.m == THREE and b2.b == FIVE)
+	puts "Line intersect not working properly"
+end
+b3 = b.intersect(Line.new(THREE,FOUR))
+if not ((b3.is_a? NoPoints))
+	puts "Line intersect not working properly"
+end
 
 # #VerticalLine Tests
 c = VerticalLine.new(THREE)
@@ -86,14 +86,14 @@ c1 = c.shift(THREE,FIVE)
 if not (c1.x == SIX)
 	puts "VerticalLine shift not working properly"
 end
-# c2 = c.intersect(VerticalLine.new(THREE))
-# if not ((c2.is_a? VerticalLine) and c2.x == THREE )
-# 	puts "VerticalLine intersect not working properly"
-# end
-# c3 = c.intersect(VerticalLine.new(FOUR))
-# if not ((c3.is_a? NoPoints))
-# 	puts "VerticalLine intersect not working properly"
-# end
+c2 = c.intersect(VerticalLine.new(THREE))
+if not ((c2.is_a? VerticalLine) and c2.x == THREE )
+	puts "VerticalLine intersect not working properly"
+end
+c3 = c.intersect(VerticalLine.new(FOUR))
+if not ((c3.is_a? NoPoints))
+	puts "VerticalLine intersect not working properly"
+end
 
 #LineSegment Tests
 d = LineSegment.new(ONE,TWO,-THREE,-FOUR)
