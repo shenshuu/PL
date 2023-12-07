@@ -151,7 +151,7 @@ class GeometryExpression
         def inbetween(v,end1,end2,eps)
             val1 = end1 - eps <= v && v <= end2 + eps
             val2 = end2 - eps <= v && v <= end1 + eps
-            val1 && val2
+            val1 || val2
         end
         if inbetween(@x,seg.x1,seg.x2,GeometryExpression::Epsilon) && inbetween(@y,seg.y1,seg.y2,GeometryExpression::Epsilon)
             self
@@ -252,7 +252,14 @@ class GeometryExpression
     end
 
     def intersectWithSegmentAsLineResult seg
-        seg 
+		if real_close(@x,seg.x1) && real_close(@x,seg.x2)
+			seg
+		elsif seg.x1 <= @x && @x <= seg.x2
+			m = (seg.y1 - seg.y2).to_f / (seg.x1 - seg.x2)
+			Point.new(@x,m*@x)
+		else
+			NoPoints.new
+		end
     end
   end
   
@@ -293,15 +300,15 @@ class GeometryExpression
     end
 
     def intersectPoint other
-        other.intersectLineSegment self
+        other.intersectWithSegmentAsLineResult self
     end
 
     def intersectLine other
-        other.intersectLineSegment self
+        other.intersectWithSegmentAsLineResult self
     end
 
     def intersectVerticalLine other
-        other.intersectLineSegment self
+        other.intersectWithSegmentAsLineResult self
     end
 
     def intersectWithSegmentAsLineResult seg
