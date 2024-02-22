@@ -14,7 +14,9 @@ fun getChars stream =
       | SOME line => String.explode(line)::getChars(stream)
 
 			 
-datatype Token = Identifier of string | Constant of int | OpenBrace | CloseBrace | OpenParen | CloseParen | Keyword of string | Semicolon
+datatype Token = Identifier of string
+	       | Constant of int | OpenBrace | CloseBrace
+	       | OpenParen | CloseParen | Keyword of string | Semicolon
 
 exception SyntaxError of string
 
