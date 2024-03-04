@@ -1,75 +1,18 @@
-val fileStream = TextIO.openIn "main.c"
-		       
-fun readAndPrintLines stream =
-    case TextIO.inputLine stream of
-	NONE => ()
-      | SOME line => (
-	  print(line ^ "\n");
-	  readAndPrintLines stream
-      )
-
-fun getChars stream =
-    case TextIO.inputLine stream of
-	NONE => []
-      | SOME line => String.explode(line)::getChars(stream)
-
-			 
+signature Lexer =
+sig
+    type Token
+    val lex : TextIO.instream -> Token list
+end
+    
+structure Lexer =
+struct
+						   
 datatype Token = Identifier of string
 	       | Constant of int | OpenBrace | CloseBrace
 	       | OpenParen | CloseParen | Keyword of string | Semicolon
 
 exception SyntaxError of string
-
-(* AST Node definitions *)
-type id = string
-	      
-datatype program = Program of function
-     and function = Function of (id * statement)
-     and statement = Statement of exp
-     and exp = Const of int
-
-(* Parse functions for every type of AST Node *)
-
-
-(* Helper function to print AST *)
-fun printAST prog =
-    let
-	fun stringMultiply (s, n) =
-	    if n <= 0 then "" else s ^ stringMultiply(s, n-1)
-						     
-	fun printProg (prog,level) =
-	    case prog of
-		Program f =>  (print("Program(\n");
-			       print(stringMultiply("  ", level));
-			       printFunc(f, level+1);
-			       print(")\n"))
-	and printFunc (f,level) =
-	    case f of
-		Function(name,body) => (print("Function(\n");
-					print(stringMultiply("  ", level));
-					print("name=\"" ^ name ^ "\"\n");
-					print(stringMultiply("  ", level));
-					print("body=");
-					printStm(body, level+1);
-					print(stringMultiply("  ", level-1));
-					print(")\n"))
-	and printStm (s,level) =
-	    case s of
-		Statement e => (print("Return(\n");
-				print(stringMultiply("  ", level));
-				printExp(e, level+1);
-				print(stringMultiply("  ", level-1));
-				print(")\n"))
-	and printExp (e,level) =
-	    case e of 
-		Const n => print("Const(" ^ Int.toString n ^ ")\n")
-    in
-	printProg (prog,1)
-    end
-
-val prog = Program(Function("main",Statement(Const(2))))
-val () = printAST prog	 
-	      
+			     
 fun takeWhile pred cs =
     let
 	fun helper (acc,cs) =
@@ -83,7 +26,7 @@ fun takeWhile pred cs =
     end
 	
 val keywords = ["void", "int", "main", "return"]
-	   
+		   
 fun lex prog =
     let
 	fun validify_tokens toks =
@@ -92,7 +35,7 @@ fun lex prog =
  	      | tok::[] => tok::[]
 	      | (Constant n)::(Identifier id)::toks' => raise SyntaxError "invalid identifier"
 	      | tok1::tok2::toks' => tok1::validify_tokens(tok2::toks')
-			 
+							  
 	fun tokenizer (chars,acc) =
 	    case chars of
 		[] => List.rev acc
@@ -126,8 +69,5 @@ fun lex prog =
 	    NONE => []
 	  | SOME line => validify_tokens(tokenizer(String.explode line, [])) @ lex prog
     end
-	
-val tokens = lex fileStream
 
-		 
-val () = TextIO.closeIn fileStream
+end
