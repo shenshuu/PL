@@ -7,92 +7,97 @@ sig
     type statement
     type exp
 	     
-    val printAST : program -> unit
+    val print_AST : program -> unit
     val parse : Token list -> program	  
+				  
 end
 
 structure Parser =
 struct 
-exception ProgramParseError of string
-exception FunctionParseError of string
-exception StatementParseError of string
-exception ExpParseError of string
+exception ProgramParseError
+exception FunctionParseError
+exception StatementParseError
+exception ExpParseError
 
 (* AST Node definitions *)
 type id = string
 	      
 datatype program = Program of function
-     and function = Function of (id * statement) | NullFunc
-     and statement = Statement of exp | NullStm
-     and exp = Const of int | NullExp
+     and function = Function of (id * statement)
+     and statement = Statement of exp
+     and exp = Const of int
 
 			    
 (* Helper function to print AST *)
-fun printAST prog =
+fun print_AST prog =
     let
-	fun stringMultiply (s, n) =
-	    if n <= 0 then "" else s ^ stringMultiply(s, n-1)
+	fun string_multiply (s, n) =
+	    if n <= 0 then "" else s ^ string_multiply(s, n-1)
 						     
-	fun printProg (prog,level) =
+	fun print_prog (prog,level) =
 	    case prog of
 		Program f =>  (print("Program(\n");
-			       print(stringMultiply("  ", level));
-			       printFunc(f, level+1);
+			       print(string_multiply("  ", level));
+			       print_func(f, level+1);
 			       print(")\n"))
-	and printFunc (f,level) =
+	and print_func (f,level) =
 	    case f of
 		Function(name,body) => (print("Function(\n");
-					print(stringMultiply("  ", level));
+					print(string_multiply("  ", level));
 					print("name=\"" ^ name ^ "\"\n");
-					print(stringMultiply("  ", level));
+					print(string_multiply("  ", level));
 					print("body=");
-					printStm(body, level+1);
-					print(stringMultiply("  ", level-1));
+					print_stm(body, level+1);
+					print(string_multiply("  ", level-1));
 					print(")\n"))
-	and printStm (s,level) =
+	and print_stm (s,level) =
 	    case s of
 		Statement e => (print("Return(\n");
-				print(stringMultiply("  ", level));
-				printExp(e, level+1);
-				print(stringMultiply("  ", level-1));
+				print(string_multiply("  ", level));
+				print_exp(e, level+1);
+				print(string_multiply("  ", level-1));
 				print(")\n"))
-	and printExp (e,level) =
+	and print_exp (e,level) =
 	    case e of 
 		Const n => print("Const(" ^ Int.toString n ^ ")\n")
     in
-	printProg (prog,1)
+	print_prog (prog,1)
     end
 		 
 
 fun parse tokens =
     let
-	fun parseFunc (tokens, i, func) =
-	    case (tokens, i) of
-		(Keyword("int")::tokens', 0) => parseFunc(tokens', i+1, func)
-	      | (Keyword("main")::tokens', 1) => parseFunc(tokens', i+1, Function("main", NullStm))
-	      | (OpenParen::tokens', 2) => parseFunc(tokens', i+1, func)
-	      | (Keyword("void")::tokens', 3) => parseFunc(tokens', i+1, func)
-	      | (CloseParen::tokens', 4) => parseFunc(tokens', i+1, func)
-	      | (OpenBrace::tokens', 5) => parseFunc(tokens', i+1, func)
-	      | (_::_, 6) => (let val (stm, rest) = parseStm(tokens, 0, NullStm)
-			      in parseFunc(rest, i+1, Function("main", stm)) end)
-	      | (CloseBrace::tokens', 7) => (func, tokens')
-	      | _ => raise FunctionParseError "cannot parse function from given tokens"
-	and parseStm (tokens, i, stm) =
-	    case (tokens, i) of
-		(Keyword("return")::tokens', 0) => (let val (e, rest) = parseExp(tokens', 0, NullExp)
-						    in (Statement e, rest) end)
-	      | _ => raise StatementParseError "cannot parse statement from given tokens"
-	and parseExp (tokens, i, e) =
-	    case (tokens, i) of
-		(Constant(n)::tokens', 0) => parseExp(tokens', i+1, Const n)
-	      | (Semicolon::tokens', 1) => (e, tokens')
-	      | _ => raise ExpParseError "cannot parse exp from given tokens"
+	fun parse_func (tokens, i, name, body) =
+	    case (tokens, i, name, body) of
+		(Keyword("int")::tokens', 0, NONE, NONE) => parse_func(tokens', i+1, name, body)
+	      | (Keyword("main")::tokens', 1, NONE, NONE) => parse_func(tokens', i+1, SOME "main", NONE)
+	      | (OpenParen::tokens', 2, _, NONE) => parse_func(tokens', i+1, name, body)
+	      | (Keyword("void")::tokens', 3, _, NONE) => parse_func(tokens', i+1, name, body)
+	      | (CloseParen::tokens', 4, _, NONE) => parse_func(tokens', i+1, name, body)
+	      | (OpenBrace::tokens', 5, _, NONE) => parse_func(tokens', i+1, name, body)
+	      | (_::_, 6, _, NONE) => (let val (stm, rest) = parse_stm(tokens, 0, NONE)
+						       in parse_func(rest, i+1, name, SOME stm) end)
+	      | (CloseBrace::tokens', 7, SOME name, SOME body) => (Function(name, body), tokens')
+	      | _ => (print("cannot parse function from given tokens");
+		      raise FunctionParseError)
+	and parse_stm (tokens, i, stm) =
+	    case (tokens, i, stm) of
+		(Keyword("return")::tokens', 0, NONE) => (let val (e, rest) = parse_exp(tokens', 0, NONE)
+							  in (Statement e, rest) end)
+	      | _ => (print("cannot parse statement from given tokens");
+		      raise StatementParseError)
+	and parse_exp (tokens, i, e) =
+	    case (tokens, i, e) of
+		(Constant(n)::tokens', 0, NONE) => parse_exp(tokens', i+1, SOME (Const n))
+	      | (Semicolon::tokens', 1, SOME e) => (e, tokens')
+	      | _ => (print("cannot parse exp from given tokens");
+		      raise ExpParseError)
     in
 	case tokens of
-	    Keyword("int")::tokens' => (let val (func, rest) = parseFunc(tokens, 0, NullFunc)
+	    Keyword("int")::tokens' => (let val (func, rest) = parse_func(tokens, 0, NONE, NONE)
 					in if null rest then Program func else parse rest end)
-	 | _ => raise ProgramParseError "cannot parse invalid program"
+	  | _ => (print("cannot parse invalid program");
+		  raise ProgramParseError)
 								    
     end
 end

@@ -11,9 +11,10 @@ datatype Token = Identifier of string
 	       | Constant of int | OpenBrace | CloseBrace
 	       | OpenParen | CloseParen | Keyword of string | Semicolon
 
-exception SyntaxError of string
+exception SyntaxError
+exception InvalidToken
 			     
-fun takeWhile pred cs =
+fun take_while pred cs =
     let
 	fun helper (acc,cs) =
 	    case cs of
@@ -33,7 +34,8 @@ fun lex prog =
 	    case toks of
 		[] => []
  	      | tok::[] => tok::[]
-	      | (Constant n)::(Identifier id)::toks' => raise SyntaxError "invalid identifier"
+	      | (Constant n)::(Identifier id)::toks' => (print("invalid identifier");
+	      		  		  		 raise SyntaxError)
 	      | tok1::tok2::toks' => tok1::validify_tokens(tok2::toks')
 							  
 	fun tokenizer (chars,acc) =
@@ -49,7 +51,7 @@ fun lex prog =
 	      | #";"::cs => tokenizer(cs,Semicolon::acc)
 	      | c::cs => if Char.isAlpha c
 			 then
-			     let val (tok_cs,rest) = takeWhile Char.isAlphaNum (c::cs)
+			     let val (tok_cs,rest) = take_while Char.isAlphaNum (c::cs)
 				 val tok = String.implode tok_cs
 			     in if List.exists (fn keyword => keyword=tok) keywords
 				then tokenizer(rest, Keyword(tok)::acc)
@@ -57,17 +59,18 @@ fun lex prog =
 			     end
 			 else if Char.isDigit c
 			 then
-			     let val (tok_cs,rest) = takeWhile Char.isDigit (c::cs)
+			     let val (tok_cs,rest) = take_while Char.isDigit (c::cs)
 			     in case Int.fromString(String.implode tok_cs) of
-				    NONE => raise SyntaxError "invalid constant"
+				    NONE => (print("invalid constant");
+					     raise SyntaxError)
 				  | SOME n => tokenizer(rest, Constant(n)::acc)
 			     end
 			 else
-			     raise SyntaxError "invalid syntax"		    
+			     (print("unable to tokenize characters");
+			      raise InvalidToken)
     in
 	case TextIO.inputLine prog of
 	    NONE => []
 	  | SOME line => validify_tokens(tokenizer(String.explode line, [])) @ lex prog
     end
-
 end
