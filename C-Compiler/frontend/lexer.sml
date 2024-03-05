@@ -2,6 +2,7 @@ signature Lexer =
 sig
     type Token
     val lex : TextIO.instream -> Token list
+    val tok_to_string : Token -> string
 end
     
 structure Lexer =
@@ -13,7 +14,18 @@ datatype Token = Identifier of string
 
 exception SyntaxError
 exception InvalidToken
-			     
+
+fun tok_to_string tok =
+    case tok of
+	Identifier i => i
+      | Constant n => Int.toString n
+      | OpenBrace => "{"
+      | CloseBrace => "}"
+      | OpenParen => "("
+      | CloseParen => ")"
+      | Keyword w => w
+      | Semicolon => ";"
+	      
 fun take_while pred cs =
     let
 	fun helper (acc,cs) =
@@ -34,7 +46,7 @@ fun lex prog =
 	    case toks of
 		[] => []
  	      | tok::[] => tok::[]
-	      | (Constant n)::(Identifier id)::toks' => (print("invalid identifier");
+	      | (Constant n)::(Identifier id)::toks' => (print("cannot tokenize invalid identifier: " ^ Int.toString n ^ id);
 	      		  		  		 raise SyntaxError)
 	      | tok1::tok2::toks' => tok1::validify_tokens(tok2::toks')
 							  
@@ -61,12 +73,12 @@ fun lex prog =
 			 then
 			     let val (tok_cs,rest) = take_while Char.isDigit (c::cs)
 			     in case Int.fromString(String.implode tok_cs) of
-				    NONE => (print("invalid constant");
+				    NONE => (print("invalid constant: " ^ String.implode tok_cs);
 					     raise SyntaxError)
 				  | SOME n => tokenizer(rest, Constant(n)::acc)
 			     end
 			 else
-			     (print("unable to tokenize characters");
+			     (print("unable to tokenize: " ^ String.implode (c::cs));
 			      raise InvalidToken)
     in
 	case TextIO.inputLine prog of
