@@ -1,3 +1,4 @@
+open Utils;
 open Parser;
 
 signature Codegen =
@@ -20,16 +21,48 @@ datatype program = Program of function
      and instruction = Mov of (operand * operand) | Ret
      and operand = Imm of int | Register
 
-fun generate_instructions (Parser.Program func) =
+fun map_ast_nodes (Parser.Program node) =
     let
-	fun generate_func_instructions (Parser.Function(name,body)) =
-	    Function(name, [generate_stm_instructions body])
-	and generate_stm_instructions (Parser.Statement exp) =
-	    Mov(generate_exp_instructions exp, Register)
-	and generate_exp_instructions (Parser.Const n) =
+	fun map_func_node (Parser.Function(name,body)) =
+	    Function(name, [Ret, map_stm_node body])
+	and map_stm_node (Parser.Statement exp) =
+	    Mov(map_exp_node exp, Register)
+	and map_exp_node (Parser.Const n) =
 	    Imm n
     in
-	Program(generate_func_instructions func)
+	Program(map_func_node node)
     end
-				    
+
+fun generate_asm (Program func) =
+    let
+	fun generate_func_instructions (node, depth) =
+	    case node of
+		Function(name, ins_list) => (let val header = ".globl _" ^ name ^ "\n" ^ "_" ^ name ^ ":\n"
+						 val instructions = List.map (fn ins => generate_instructions(ins, depth+1)) ins_list
+					     in header ^ Utils.string_multiply("  ", depth) ^ List.foldl (op ^) "" instructions end)
+						
+	and generate_instructions (node, depth) =
+	    let
+		val instructions = (
+		    case node of
+			(Mov(src, dst)) => "movl " ^ generate_operands src ^ ", " ^ generate_operands dst ^ "\n"
+		      | Ret => "retq\n")
+	    in
+		Utils.string_multiply("  ", depth) ^ instructions
+	    end
+	and generate_operands (Imm n) =
+	    "$" ^ Int.toString n
+	  | generate_operands Register = "%eax"
+    in
+	generate_func_instructions (func, 0)
+    end
 end
+
+fun write_to_file file asm =
+    let
+	val outfile = TextIO.openOut file
+    in
+	(TextIO.output(outfile, asm);
+	 TextIO.flushOut(outfile);
+	 TextIO.closeOut(outfile))
+    end
