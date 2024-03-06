@@ -1,3 +1,4 @@
+open Utils;
 open Lexer;
 
 signature Parser =
@@ -30,32 +31,29 @@ datatype program = Program of function
 			    
 (* Helper function to print AST *)
 fun print_AST prog =
-    let
-	fun string_multiply (s, n) =
-	    if n <= 0 then "" else s ^ string_multiply(s, n-1)
-						     
+    let						     
 	fun print_prog (prog,level) =
 	    case prog of
 		Program f =>  (print("Program(\n");
-			       print(string_multiply("  ", level));
+			       print(Utils.string_multiply("  ", level));
 			       print_func(f, level+1);
 			       print(")\n"))
 	and print_func (f,level) =
 	    case f of
 		Function(name,body) => (print("Function(\n");
-					print(string_multiply("  ", level));
+					print(Utils.string_multiply("  ", level));
 					print("name=\"" ^ name ^ "\"\n");
-					print(string_multiply("  ", level));
+					print(Utils.string_multiply("  ", level));
 					print("body=");
 					print_stm(body, level+1);
-					print(string_multiply("  ", level-1));
+					print(Utils.string_multiply("  ", level-1));
 					print(")\n"))
 	and print_stm (s,level) =
 	    case s of
 		Statement e => (print("Return(\n");
-				print(string_multiply("  ", level));
+				print(Utils.string_multiply("  ", level));
 				print_exp(e, level+1);
-				print(string_multiply("  ", level-1));
+				print(Utils.string_multiply("  ", level-1));
 				print(")\n"))
 	and print_exp (e,level) =
 	    case e of 
