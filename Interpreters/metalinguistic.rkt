@@ -79,6 +79,17 @@
 (define (cond-clauses exp) (cdr exp))
 (define (cond-predicate clause) (car clause))
 (define (cond-actions clause) (cdr clause))
+(define (cond-recipient clause) (caddr clause))
+(define (cond-recipient-clause? clause)
+  (eq? '=> (cadr clause)))
+
+(define (make-cond-recipient clause predicate)
+  (list (cond-recipient clause) predicate))
+
+(define (cond-consequent clause predicate)
+  (if (cond-recipient-clause? clause)
+      (make-cond-recipient clause predicate)
+      (sequence->exp (cond-actions clause))))
 
 (define (cond-else-clause? clause)
   (eq? (cond-predicate clause) 'else))
@@ -99,6 +110,23 @@
   
 (define (cond->if exp)
   (expand-clauses (cond-clauses exp)))
+
+(define (let-initials exp)
+  (map cadr (cadr exp)))
+
+(define (let-parameters exp)
+  (map car (cadr exp)))
+
+(define (let-body exp)
+  (caddr exp))
+
+(define (let->combination exp)
+  (cons (make-lambda (let-parameters exp)
+                     (let-body exp))
+        (let-initials exp)))
+
+(define (eval-let exp env)
+  (eval (let->combination exp) env))
 
 (define (list-of-values exps env)
   (if (no-operands? exps)
