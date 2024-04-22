@@ -1,4 +1,4 @@
-#define racket
+#lang racket
 
 (define (new-cons n)
   (* 2 n))
